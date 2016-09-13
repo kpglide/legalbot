@@ -22,7 +22,7 @@ CONTRACT_COMMANDS = {'nda': 'Great, what\'s the name of the other party?'}
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
-def handle_command(command, channel):
+def handle_command(command, channel, user):
     """
         Receives commands directed at the bot and determines if they
         are valid commands. If so, then acts on the commands. If not,
@@ -39,6 +39,11 @@ def handle_command(command, channel):
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
+    print slack_client.api_call("users.info", 
+                                token=os.environ.get('SLACK_BOT_TOKEN'),
+                                user=user
+                                )
+
 
 def parse_slack_output(slack_rtm_output):
     """
@@ -52,17 +57,17 @@ def parse_slack_output(slack_rtm_output):
             if output and 'text' in output and AT_BOT in output['text']:
                 # return text after the @ mention, whitespace removed
                 return output['text'].split(AT_BOT)[1].strip().lower(), \
-                       output['channel']
-    return None, None
+                       output['channel'], output['user']
+    return None, None, None
 
 if __name__ == "__main__":
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
     if slack_client.rtm_connect():
         print("StarterBot connected and running!")
         while True:
-            command, channel = parse_slack_output(slack_client.rtm_read())
-            if command and channel:
-                handle_command(command, channel)
+            command, channel, user = parse_slack_output(slack_client.rtm_read())
+            if command and channel and user:
+                handle_command(command, channel, user)
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
         print("Connection failed. Invalid Slack token or bot ID?")
