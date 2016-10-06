@@ -39,11 +39,6 @@ def handle_command(command, channel, user):
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
-    print slack_client.api_call("users.info", 
-                                token=os.environ.get('SLACK_BOT_TOKEN'),
-                                user=user
-                                )
-
 
 def parse_slack_output(slack_rtm_output):
     """
@@ -53,11 +48,20 @@ def parse_slack_output(slack_rtm_output):
     """
     output_list = slack_rtm_output
     if output_list and len(output_list) > 0:
+        print 'output list is: ', output_list
         for output in output_list:
-            if output and 'text' in output and AT_BOT in output['text']:
+            
+            if (output and 'text' in output and AT_BOT in output['text'] 
+                and output['channel'].startswith('D')
+                ):
                 # return text after the @ mention, whitespace removed
                 return output['text'].split(AT_BOT)[1].strip().lower(), \
                        output['channel'], output['user']
+
+            elif (output and 'text' in output and output['channel'].startswith('D')
+                    and output['user'] != BOT_ID):
+                return output['text'], output['channel'], output['user']
+
     return None, None, None
 
 if __name__ == "__main__":
@@ -65,30 +69,9 @@ if __name__ == "__main__":
     if slack_client.rtm_connect():
         print("StarterBot connected and running!")
         while True:
-            output_list = slack_client.rtm_read()
-            print 'output is:'
-            """for item in output:
-                if 'channel' in item:
-                    try:
-                        print slack_client.server.channels.find(item['channel'])
-                        print
-                        print slack_client.api_call("im.history", 
-                                token=os.environ.get('SLACK_BOT_TOKEN'),
-                                channel=item['channel']
-                                )
-                    except:
-                        print 'there was an error'
-            """
-            if output_list and len(output_list) > 0:
-                for output in output_list:
-                    if output and 'text' in output and output['channel'].startswith('D'):
-                        print 'output is: '
-                        print
-                        print output
-            '''
             command, channel, user = parse_slack_output(slack_client.rtm_read())
             if command and channel and user:
-                handle_command(command, channel, user)'''
+                handle_command(command, channel, user)
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
         print("Connection failed. Invalid Slack token or bot ID?")
