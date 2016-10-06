@@ -65,9 +65,30 @@ if __name__ == "__main__":
     if slack_client.rtm_connect():
         print("StarterBot connected and running!")
         while True:
+            output_list = slack_client.rtm_read()
+            print 'output is:'
+            """for item in output:
+                if 'channel' in item:
+                    try:
+                        print slack_client.server.channels.find(item['channel'])
+                        print
+                        print slack_client.api_call("im.history", 
+                                token=os.environ.get('SLACK_BOT_TOKEN'),
+                                channel=item['channel']
+                                )
+                    except:
+                        print 'there was an error'
+            """
+            if output_list and len(output_list) > 0:
+                for output in output_list:
+                    if output and 'text' in output and output['channel'].startswith('D'):
+                        print 'output is: '
+                        print
+                        print output
+            '''
             command, channel, user = parse_slack_output(slack_client.rtm_read())
             if command and channel and user:
-                handle_command(command, channel, user)
+                handle_command(command, channel, user)'''
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
         print("Connection failed. Invalid Slack token or bot ID?")
